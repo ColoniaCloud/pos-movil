@@ -31,8 +31,8 @@ export function Login() {
     <div className="flex min-h-svh flex-col items-center justify-center bg-neutral-50 px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 h-14 w-14 rounded-2xl" style={{ background: "#e4622c" }} />
-          <h1 className="text-2xl font-bold text-neutral-900">Dr Polarizados</h1>
+          <img src="/kristall-logo.png" alt="Kristall" className="mx-auto mb-4 h-10 w-auto" />
+          <h1 className="text-2xl font-bold text-neutral-900">POS Kristall</h1>
           <p className="text-neutral-500">Ventas</p>
         </div>
 

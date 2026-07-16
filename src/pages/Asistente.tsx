@@ -91,7 +91,7 @@ function ActionCard({ message }: { message: AssistantChatMessage }) {
 
 export function Asistente() {
   const [messages, setMessages] = useState<AssistantChatMessage[]>([
-    { role: "assistant", content: "Hola, soy el asistente de Dr Polarizados. Preguntame lo que necesites: clientes, ventas, stock, pagos, garantías y más." },
+    { role: "assistant", content: "Hola, soy el asistente de POS Kristall. Preguntame lo que necesites: clientes, ventas, stock, pagos, garantías y más." },
   ]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);

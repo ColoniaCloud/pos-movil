@@ -16,9 +16,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
-        name: 'Dr Polarizados — Ventas',
+        name: 'POS Kristall — Ventas',
         short_name: 'Ventas',
-        description: 'App móvil de ventas, pagos y garantías para el equipo de Dr Polarizados',
+        description: 'App móvil de ventas, pagos y garantías para el equipo de POS Kristall',
         lang: 'es',
         theme_color: '#0a0a0a',
         background_color: '#ffffff',

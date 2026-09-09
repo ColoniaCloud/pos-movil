@@ -1,5 +1,8 @@
 export type AppRole = "SUPERADMIN" | "ADMIN" | "OPERATOR";
 
+/** Espeja el enum SaleStatus del CRM (prisma/schema.prisma). */
+export type SaleStatus = "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
+
 export type SessionUser = {
   id: string;
   name: string;
@@ -40,6 +43,7 @@ export type SaleListItem = {
   total: number;
   totalPaid: number;
   remaining: number;
+  status: SaleStatus;
   itemsCount?: number;
   createdAt: string;
 };
@@ -48,6 +52,7 @@ export type SaleDetail = {
   id: string;
   number: number;
   contact: Client & { type?: string };
+  status: SaleStatus;
   requiresFactura: boolean;
   notes: string | null;
   subtotal: number;

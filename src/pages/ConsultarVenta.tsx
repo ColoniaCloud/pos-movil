@@ -2,10 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Screen } from "@/components/Screen";
 import { listSales } from "@/lib/api";
+import type { SaleListItem } from "@/lib/types";
 
-function statusBadge(remaining: number) {
-  if (remaining <= 0) return <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">Pagada</span>;
-  return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Pendiente</span>;
+// Antes el badge salia unicamente del saldo, asi que una venta anulada —que
+// conserva su total— se mostraba como "Pendiente", indistinguible de una viva.
+function statusBadge(sale: SaleListItem) {
+  const base = "rounded-full px-2 py-0.5 text-xs font-medium";
+  if (sale.status === "CANCELLED")
+    return <span className={`${base} bg-neutral-200 text-neutral-600`}>Anulada</span>;
+  if (sale.status === "PENDING")
+    return <span className={`${base} bg-blue-100 text-blue-700`}>Sin confirmar</span>;
+  if (sale.remaining <= 0)
+    return <span className={`${base} bg-green-100 text-green-700`}>Pagada</span>;
+  return <span className={`${base} bg-amber-100 text-amber-700`}>Pendiente</span>;
 }
 
 export function ConsultarVenta() {
@@ -34,7 +43,7 @@ export function ConsultarVenta() {
             </div>
             <div className="text-right">
               <p className="font-semibold text-neutral-900">${sale.total.toLocaleString("es-AR")}</p>
-              {statusBadge(sale.remaining)}
+              {statusBadge(sale)}
             </div>
           </button>
         ))}

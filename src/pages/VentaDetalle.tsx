@@ -76,6 +76,13 @@ export function VentaDetalle() {
   return (
     <Screen title={`Venta #${sale.number}`}>
       <div className="space-y-4 p-4">
+        {sale.status === "CANCELLED" && (
+          <div className="flex items-center gap-2 rounded-xl bg-neutral-200 px-4 py-3 text-sm font-medium text-neutral-700">
+            <AlertCircle className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+            Esta venta está anulada. No se le pueden registrar pagos.
+          </div>
+        )}
+
         <div className="rounded-xl bg-white p-4 shadow-sm">
           <p className="font-semibold text-neutral-900">
             {sale.contact.company || `${sale.contact.firstName} ${sale.contact.lastName}`}
@@ -133,7 +140,7 @@ export function VentaDetalle() {
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => setPanel(panel === "pago" ? "none" : "pago")}
-            disabled={sale.remaining <= 0}
+            disabled={sale.remaining <= 0 || sale.status === "CANCELLED"}
             className="flex flex-col items-center gap-1 rounded-xl bg-white py-3 text-sm font-semibold text-neutral-900 shadow-sm disabled:opacity-40"
           >
             <Wallet className="h-5 w-5" strokeWidth={1.5} />

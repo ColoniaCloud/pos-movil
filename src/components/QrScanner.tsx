@@ -11,23 +11,30 @@ export function QrScanner({ onScan, onClose }: { onScan: (text: string) => void;
     let stopped = false;
     let controls: { stop: () => void } | undefined;
 
+    // `controls` recién existe cuando resuelve decodeFromVideoDevice, pero tanto
+    // el escaneo como el desmontaje pueden ocurrir antes. Cuando pasaba,
+    // `controls?.stop()` no hacía nada y la cámara quedaba prendida hasta
+    // recargar la app — batería que en un día de ruta hace falta.
+    function stop() {
+      stopped = true;
+      controls?.stop();
+      controls = undefined;
+    }
+
     reader
       .decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
         if (result && !stopped) {
-          stopped = true;
-          controls?.stop();
+          stop();
           onScan(result.getText());
         }
       })
       .then((c) => {
         controls = c;
+        if (stopped) stop(); // se escaneó o se cerró antes de que resolviera
       })
       .catch(() => setError("No se pudo acceder a la cámara. Revisá los permisos."));
 
-    return () => {
-      stopped = true;
-      controls?.stop();
-    };
+    return stop;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

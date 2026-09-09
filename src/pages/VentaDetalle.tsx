@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
-import { Wallet, StickyNote, Undo2 } from "lucide-react";
+import { Wallet, StickyNote, Undo2, AlertCircle } from "lucide-react";
 import { Screen } from "@/components/Screen";
 import { PaymentForm } from "@/components/PaymentForm";
 import { ApiError, addSaleNote, getSale } from "@/lib/api";
@@ -13,7 +13,13 @@ export function VentaDetalle() {
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState<string | null>(null);
 
-  const { data: sale, isLoading } = useQuery({
+  const {
+    data: sale,
+    isLoading,
+    isError,
+    error: loadError,
+    refetch,
+  } = useQuery({
     queryKey: ["sale", id],
     queryFn: () => getSale(id!),
     enabled: !!id,
@@ -35,10 +41,34 @@ export function VentaDetalle() {
     noteMutation.mutate();
   }
 
-  if (isLoading || !sale) {
+  if (isLoading) {
     return (
       <Screen title="Venta">
         <p className="p-4 text-neutral-500">Cargando...</p>
+      </Screen>
+    );
+  }
+
+  // Antes esta pantalla caía en "Cargando..." para siempre ante un 404 o un
+  // corte de señal: la query exponía el error y nadie lo miraba. En la ruta,
+  // con cobertura intermitente, ese cuelgue era rutina.
+  if (isError || !sale) {
+    return (
+      <Screen title="Venta">
+        <div className="flex flex-col items-center gap-3 p-10 text-center">
+          <AlertCircle className="h-12 w-12 text-neutral-400" strokeWidth={1.5} />
+          <p className="text-lg font-semibold text-neutral-900">No se pudo cargar la venta</p>
+          <p className="text-neutral-500">
+            {loadError instanceof ApiError ? loadError.message : "Revisá la conexión y reintentá."}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="mt-2 rounded-xl px-6 py-3 font-semibold text-white active:opacity-90"
+            style={{ background: "#e4622c" }}
+          >
+            Reintentar
+          </button>
+        </div>
       </Screen>
     );
   }

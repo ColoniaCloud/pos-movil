@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { Screen } from "@/components/Screen";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/sale-draft";
 import { ClientStep } from "./ClientStep";
 import { ProductStep } from "./ProductStep";
 import { InvoiceStep } from "./InvoiceStep";
@@ -18,10 +19,22 @@ const TITLES: Record<Step, string> = {
 
 export function NuevaVenta() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("cliente");
-  const [client, setClient] = useState<Client | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  // Lo que haya quedado a medio armar antes — el teléfono se pasa el día en el
+  // bolsillo y el sistema mata la pestaña en segundo plano. Se lee una sola vez
+  // por montaje, no a nivel de módulo: si no, al volver a entrar restauraría un
+  // borrador ya consumido.
+  const [restored] = useState(loadDraft);
+  const [step, setStep] = useState<Step>(restored?.client ? "productos" : "cliente");
+  const [client, setClient] = useState<Client | null>(restored?.client ?? null);
+  const [cart, setCart] = useState<CartItem[]>(restored?.cart ?? []);
   const [createdSale, setCreatedSale] = useState<SaleDetail | null>(null);
+
+  // Se guarda mientras la venta se arma y se borra apenas el CRM la confirma:
+  // pasado ese punto la venta ya vive en el CRM y el borrador sólo estorbaría.
+  useEffect(() => {
+    if (createdSale) return;
+    saveDraft({ client, cart });
+  }, [client, cart, createdSale]);
 
   function handleChangeQty(product: Product, quantity: number) {
     setCart((prev) => {
@@ -61,6 +74,7 @@ export function NuevaVenta() {
           client={client}
           cart={cart}
           onCreated={(sale) => {
+            clearDraft();
             setCreatedSale(sale);
             setStep("listo");
           }}

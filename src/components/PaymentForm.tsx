@@ -25,9 +25,16 @@ export function PaymentForm({
   const [reference, setReference] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // Ni el form ni el endpoint validaban el techo, así que cobrar de más dejaba
+  // la venta con saldo negativo. En la ruta, tipeando el monto a mano sobre el
+  // teléfono, el error de tipeo es fácil.
+  const typedAmount = Number(amount);
+  const amountIsValid = Number.isFinite(typedAmount) && typedAmount > 0;
+  const exceedsRemaining = amountIsValid && typedAmount > remaining;
+
   const mutation = useMutation({
     mutationFn: () =>
-      createPayment({ saleId, amount: Number(amount), method, reference: reference || undefined }),
+      createPayment({ saleId, amount: typedAmount, method, reference: reference || undefined }),
     onSuccess,
     onError: (err) => setError(err instanceof ApiError ? err.message : "No se pudo registrar el pago"),
   });
@@ -35,6 +42,7 @@ export function PaymentForm({
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!amountIsValid || exceedsRemaining) return;
     mutation.mutate();
   }
 
@@ -46,12 +54,19 @@ export function PaymentForm({
           type="number"
           inputMode="decimal"
           min="0.01"
+          max={remaining}
           step="0.01"
           required
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           className="w-full rounded-lg border border-neutral-300 px-3 py-2.5 text-base"
         />
+        {exceedsRemaining && (
+          <p className="mt-1 text-sm text-amber-700">
+            El saldo de esta venta es ${remaining.toLocaleString("es-AR")}. No se puede cobrar de
+            más.
+          </p>
+        )}
       </div>
       <div>
         <label className="mb-1 block text-sm font-medium text-neutral-700">Método</label>
@@ -83,7 +98,7 @@ export function PaymentForm({
 
       <button
         type="submit"
-        disabled={mutation.isPending}
+        disabled={mutation.isPending || !amountIsValid || exceedsRemaining}
         className="w-full rounded-lg py-2.5 font-semibold text-white active:opacity-90 disabled:opacity-60"
         style={{ background: "#e4622c" }}
       >

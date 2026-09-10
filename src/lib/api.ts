@@ -14,9 +14,13 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** Cuerpo crudo de la respuesta: algunos endpoints mandan datos junto al error
+   *  —el alta de cliente devuelve los posibles duplicados en un 409—. */
+  body: unknown;
+  constructor(message: string, status: number, body?: unknown) {
     super(message);
     this.status = status;
+    this.body = body;
   }
 }
 
@@ -35,7 +39,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(body.error ?? "Ocurrió un error inesperado", res.status);
+    throw new ApiError(body.error ?? "Ocurrió un error inesperado", res.status, body);
   }
   return body as T;
 }
@@ -62,6 +66,8 @@ export async function createClient(input: {
   phone?: string;
   email?: string;
   cuit?: string;
+  /** El vendedor ya vio los duplicados que le ofrecimos y decidió crear igual. */
+  force?: boolean;
 }): Promise<Client> {
   const data = await request<{ client: Client }>("/api/mobile/v1/clients", {
     method: "POST",

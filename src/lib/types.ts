@@ -3,6 +3,13 @@ export type AppRole = "SUPERADMIN" | "ADMIN" | "OPERATOR";
 /** Espeja el enum SaleStatus del CRM (prisma/schema.prisma). */
 export type SaleStatus = "PENDING" | "CONFIRMED" | "DELIVERED" | "CANCELLED";
 
+/**
+ * Espeja ContactType del CRM. Lead, Cliente e Instalador son la misma tabla,
+ * discriminada por este campo: por eso el POS puede venderle a un instalador
+ * sin que sea un modelo aparte.
+ */
+export type ContactType = "LEAD" | "CLIENT" | "INSTALLER";
+
 export type SessionUser = {
   id: string;
   name: string;
@@ -19,6 +26,7 @@ export type Client = {
   phone: string | null;
   email: string | null;
   cuit: string | null;
+  type: ContactType;
 };
 
 export type Product = {
@@ -51,7 +59,7 @@ export type SaleListItem = {
 export type SaleDetail = {
   id: string;
   number: number;
-  contact: Client & { type?: string };
+  contact: Omit<Client, "type"> & { type?: ContactType };
   status: SaleStatus;
   requiresFactura: boolean;
   notes: string | null;

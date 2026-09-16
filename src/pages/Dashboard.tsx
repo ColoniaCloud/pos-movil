@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { FileText, Search, Wallet, Undo2, Bot, Mail, type LucideIcon } from "lucide-react";
+import { FileText, Search, Wallet, Undo2, Bot, Mail, UserPlus, type LucideIcon } from "lucide-react";
 import { UserAvatarMenu } from "@/components/UserAvatarMenu";
 
 const ACTIONS: { to: string; label: string; icon: LucideIcon }[] = [
@@ -7,6 +7,7 @@ const ACTIONS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/ventas", label: "Consultar venta", icon: Search },
   { to: "/pagos", label: "Registrar pago", icon: Wallet },
   { to: "/devolucion", label: "Hacer devolución", icon: Undo2 },
+  { to: "/leads/nuevo", label: "Registrar lead", icon: UserPlus },
   { to: "/asistente", label: "Consultar agente", icon: Bot },
   { to: "/mail", label: "Mail", icon: Mail },
 ];

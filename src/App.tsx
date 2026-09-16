@@ -4,6 +4,7 @@ import { InstallPwaPrompt } from "@/components/InstallPwaPrompt";
 import { Login } from "@/pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
 import { NuevaVenta } from "@/pages/NuevaVenta";
+import { RegistrarLead } from "@/pages/RegistrarLead";
 import { ConsultarVenta } from "@/pages/ConsultarVenta";
 import { VentaDetalle } from "@/pages/VentaDetalle";
 import { RegistrarPago } from "@/pages/RegistrarPago";
@@ -22,6 +23,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/ventas/nueva" element={<NuevaVenta />} />
+          <Route path="/leads/nuevo" element={<RegistrarLead />} />
           <Route path="/ventas" element={<ConsultarVenta />} />
           <Route path="/ventas/:id" element={<VentaDetalle />} />
           <Route path="/pagos" element={<RegistrarPago />} />

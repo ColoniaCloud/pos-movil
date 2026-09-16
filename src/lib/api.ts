@@ -76,6 +76,36 @@ export async function createClient(input: {
   return data.client;
 }
 
+export async function createLead(input: {
+  firstName: string;
+  lastName: string;
+  company?: string;
+  sector?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  cuit?: string;
+  notes?: string;
+  // Diagnóstico comercial — el CRM lo guarda como una nota en la ficha del lead.
+  monthlyCarVolume?: string;
+  filmBrandsUsed?: string;
+  currentSuppliers?: string;
+  rollPurchasePrices?: string;
+  improvementNeeds?: string;
+  logisticsIssues?: string;
+  /** El vendedor ya vio los duplicados que le ofrecimos y decidió crear igual. */
+  force?: boolean;
+}): Promise<Client> {
+  const data = await request<{ lead: Client }>("/api/mobile/v1/leads", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return data.lead;
+}
+
 export async function searchProducts(search: string): Promise<Product[]> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : "";
   const data = await request<{ products: Product[] }>(`/api/mobile/v1/products${qs}`);

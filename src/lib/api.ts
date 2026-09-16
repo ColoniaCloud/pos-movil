@@ -3,6 +3,9 @@ import type {
   AssistantApiResponse,
   AssistantChatMessage,
   Client,
+  LeadActivityItem,
+  LeadDetail,
+  LeadListItem,
   PaymentMethod,
   Product,
   SaleDetail,
@@ -175,6 +178,51 @@ export async function sendRemitoEmail(saleId: string, email?: string): Promise<{
     method: "POST",
     body: JSON.stringify(email ? { email } : {}),
   });
+}
+
+export async function listLeads(params: {
+  search?: string;
+  contacted?: boolean;
+  myLeads?: boolean;
+  hasAddress?: boolean;
+}): Promise<LeadListItem[]> {
+  const qs = new URLSearchParams();
+  if (params.search) qs.set("search", params.search);
+  if (params.contacted !== undefined) qs.set("contacted", String(params.contacted));
+  if (params.myLeads) qs.set("myLeads", "1");
+  if (params.hasAddress) qs.set("hasAddress", "1");
+  const query = qs.toString();
+  const data = await request<{ leads: LeadListItem[] }>(
+    `/api/mobile/v1/leads${query ? `?${query}` : ""}`
+  );
+  return data.leads;
+}
+
+export async function getLead(id: string): Promise<LeadDetail> {
+  const data = await request<{ lead: LeadDetail }>(`/api/mobile/v1/leads/${id}`);
+  return data.lead;
+}
+
+export async function listLeadActivities(id: string): Promise<LeadActivityItem[]> {
+  const data = await request<{ activities: LeadActivityItem[] }>(
+    `/api/mobile/v1/leads/${id}/activities`
+  );
+  return data.activities;
+}
+
+export async function addLeadNote(id: string, note: string): Promise<LeadActivityItem> {
+  const data = await request<{ activity: LeadActivityItem }>(`/api/mobile/v1/leads/${id}/activities`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
+  return data.activity;
+}
+
+export async function convertLeadToClient(id: string): Promise<LeadDetail> {
+  const data = await request<{ lead: LeadDetail }>(`/api/mobile/v1/leads/${id}/convert`, {
+    method: "POST",
+  });
+  return data.lead;
 }
 
 export async function askAssistant(

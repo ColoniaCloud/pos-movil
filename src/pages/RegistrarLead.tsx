@@ -4,19 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Screen } from "@/components/Screen";
 import { ApiError, createLead } from "@/lib/api";
+import { SECTORS } from "@/lib/sectors";
 import type { Client, ContactType } from "@/lib/types";
-
-// Mismas 6 opciones que el dialogo de "Nuevo lead" del CRM web
-// (src/lib/design-tokens.ts: SECTOR_COLORS) — se repiten acá porque no hay
-// un endpoint que las liste.
-const SECTORS: { value: string; label: string }[] = [
-  { value: "AUTO_TALLER", label: "Auto - Taller" },
-  { value: "AUTO_CONCESIONARIO", label: "Auto - Concesionario" },
-  { value: "AUTO_MAYORISTA", label: "Auto - Mayorista" },
-  { value: "ARQUITECTURA_CONSTRUCTORA", label: "Arquitectura - Constructora" },
-  { value: "ARQUITECTURA_VIDRIERIA", label: "Arquitectura - Vidriería" },
-  { value: "ARQUITECTURA_MAYORISTA", label: "Arquitectura - Mayorista" },
-];
 
 type ContactForm = {
   firstName: string;

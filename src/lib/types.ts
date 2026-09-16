@@ -89,6 +89,50 @@ export type SaleDetail = {
 
 export type PaymentMethod = "CASH" | "TRANSFER" | "CHECK" | "CARD" | "OTHER";
 
+export type LeadListItem = {
+  id: string;
+  leadNumber: number;
+  firstName: string;
+  lastName: string;
+  company: string | null;
+  sector: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  city: string | null;
+  contacted: boolean;
+  createdAt: string;
+};
+
+export type LeadDetail = {
+  id: string;
+  leadNumber: number;
+  firstName: string;
+  lastName: string;
+  company: string | null;
+  sector: string | null;
+  email: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  cuit: string | null;
+  notes: string | null;
+  contacted: boolean;
+  createdAt: string;
+  assignedTo: { id: string; name: string } | null;
+};
+
+export type LeadActivityItem = {
+  id: string;
+  type: string;
+  title: string;
+  description: string | null;
+  createdAt: string;
+  user: { id: string; name: string } | null;
+};
+
 export type AssistantNavigateAction = { type: "navigate"; path: string; label: string };
 
 export type AssistantTableAction = {

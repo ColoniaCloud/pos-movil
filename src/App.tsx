@@ -5,6 +5,8 @@ import { Login } from "@/pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
 import { NuevaVenta } from "@/pages/NuevaVenta";
 import { RegistrarLead } from "@/pages/RegistrarLead";
+import { Leads } from "@/pages/Leads";
+import { LeadDetalle } from "@/pages/Leads/LeadDetalle";
 import { ConsultarVenta } from "@/pages/ConsultarVenta";
 import { VentaDetalle } from "@/pages/VentaDetalle";
 import { RegistrarPago } from "@/pages/RegistrarPago";
@@ -24,6 +26,8 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/ventas/nueva" element={<NuevaVenta />} />
           <Route path="/leads/nuevo" element={<RegistrarLead />} />
+          <Route path="/leads" element={<Leads />} />
+          <Route path="/leads/:id" element={<LeadDetalle />} />
           <Route path="/ventas" element={<ConsultarVenta />} />
           <Route path="/ventas/:id" element={<VentaDetalle />} />
           <Route path="/pagos" element={<RegistrarPago />} />

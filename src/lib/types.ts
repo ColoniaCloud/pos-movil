@@ -172,3 +172,52 @@ export type AssistantApiResponse = {
 };
 
 export type AssistantChatMessage = { role: "user" | "assistant"; content: string; action?: AssistantAction };
+
+/** Espeja SaleReturnRefund del CRM. */
+export type RefundMethod = "CREDIT_NOTE" | "CASH";
+
+/** Una línea de la venta, con lo que ya se devolvió descontado. */
+export type ReturnableItem = {
+  saleItemId: string;
+  productId: string;
+  productName: string;
+  sku: string | null;
+  unitPrice: number;
+  quantity: number;
+  returned: number;
+  returnable: number;
+};
+
+export type SaleReturn = {
+  id: string;
+  number: number;
+  refund: RefundMethod;
+  total: number;
+  reason: string | null;
+  /** Rollos que no volvieron a stock porque la garantía ya estaba activada. */
+  retainedRolls: string | null;
+  createdAt: string;
+  userName: string;
+  items: {
+    id: string;
+    productName: string;
+    sku: string | null;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+  }[];
+};
+
+export type SaleReturnsInfo = {
+  saleNumber: number;
+  /** Solo las ventas confirmadas o entregadas admiten devolución. */
+  returnable: boolean;
+  /**
+   * Cuánto se acredita por cada peso de mercadería devuelta. Con factura es
+   * mayor a 1 (arrastra el IVA) y con descuento, menor. Viene del CRM: la app
+   * NO lo recalcula, para que el número que ve el vendedor sea el que se emite.
+   */
+  creditRatio: number;
+  items: ReturnableItem[];
+  returns: SaleReturn[];
+};

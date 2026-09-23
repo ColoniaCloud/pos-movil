@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Wallet, StickyNote, Undo2, AlertCircle } from "lucide-react";
 import { Screen } from "@/components/Screen";
 import { PaymentForm } from "@/components/PaymentForm";
@@ -8,6 +8,7 @@ import { ApiError, addSaleNote, getSale } from "@/lib/api";
 
 export function VentaDetalle() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [panel, setPanel] = useState<"none" | "pago" | "nota">("none");
   const [note, setNote] = useState("");
@@ -154,9 +155,14 @@ export function VentaDetalle() {
             Nota
           </button>
           <button
-            disabled
-            title="Próximamente"
-            className="flex flex-col items-center gap-1 rounded-xl bg-white py-3 text-sm font-semibold text-neutral-400 shadow-sm"
+            onClick={() => navigate(`/devolucion?venta=${sale.id}`)}
+            disabled={sale.status !== "CONFIRMED" && sale.status !== "DELIVERED"}
+            title={
+              sale.status === "CONFIRMED" || sale.status === "DELIVERED"
+                ? undefined
+                : "Solo se puede devolver una venta entregada"
+            }
+            className="flex flex-col items-center gap-1 rounded-xl bg-white py-3 text-sm font-semibold text-neutral-900 shadow-sm disabled:text-neutral-400 disabled:opacity-40"
           >
             <Undo2 className="h-5 w-5" strokeWidth={1.5} />
             Devolución

@@ -8,8 +8,10 @@ import type {
   LeadListItem,
   PaymentMethod,
   Product,
+  RefundMethod,
   SaleDetail,
   SaleListItem,
+  SaleReturnsInfo,
   SessionUser,
 } from "./types";
 
@@ -153,6 +155,28 @@ export async function createSale(input: {
     body: JSON.stringify(input),
   });
   return data.sale;
+}
+
+export async function getSaleReturns(saleId: string): Promise<SaleReturnsInfo> {
+  return request<SaleReturnsInfo>(`/api/mobile/v1/sales/${saleId}/returns`);
+}
+
+/**
+ * Registra la devolución. Solo ADMIN: el CRM responde 403 a un OPERATOR, y la
+ * pantalla ya no le muestra el botón — pero el permiso lo decide el backend.
+ */
+export async function createSaleReturn(
+  saleId: string,
+  input: {
+    refund: RefundMethod;
+    reason?: string;
+    items: { saleItemId: string; quantity: number }[];
+  }
+): Promise<{ number: number; total: number; retainedRolls: string[] }> {
+  return request(`/api/mobile/v1/sales/${saleId}/returns`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 export async function listPendingPayments(): Promise<SaleListItem[]> {

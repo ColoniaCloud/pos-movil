@@ -18,6 +18,21 @@ export type SessionUser = {
   avatarUrl: string | null;
 };
 
+/**
+ * Etiqueta de descuento del contacto: el descuento pactado que el CRM le aplica
+ * solo a la venta, sobre el precio de lista. Viene ya filtrada — el CRM manda
+ * `null` si la etiqueta esta desactivada, asi el POS no tiene que saber la regla.
+ */
+export type DiscountTag = {
+  id: string;
+  code: string;
+  name: string;
+  type: "PERCENTAGE" | "FIXED";
+  /** En PERCENTAGE es el porcentaje (20 = 20%); en FIXED, pesos. */
+  value: number;
+  active: boolean;
+};
+
 export type Client = {
   id: string;
   firstName: string;
@@ -27,6 +42,7 @@ export type Client = {
   email: string | null;
   cuit: string | null;
   type: ContactType;
+  discountTag?: DiscountTag | null;
 };
 
 export type Product = {
@@ -65,6 +81,12 @@ export type SaleDetail = {
   notes: string | null;
   subtotal: number;
   discount: number;
+  /** La parte de `discount` que puso la etiqueta del cliente. */
+  tagDiscount: number;
+  /** La parte que cargo a mano el vendedor. */
+  manualDiscount: number;
+  /** `"A — Mayorista (20%)"`, o null si no se aplico ninguna etiqueta. */
+  discountTagLabel: string | null;
   tax: number;
   total: number;
   totalPaid: number;

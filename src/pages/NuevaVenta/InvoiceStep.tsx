@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ApiError, createSale } from "@/lib/api";
-import { IVA_RATE, calcSaleTotals, formatMoney } from "@/lib/money";
+import { IVA_RATE, calcSaleTotals, describeTag, formatMoney } from "@/lib/money";
 import type { CartItem, Client, SaleDetail } from "@/lib/types";
 
 export function InvoiceStep({
@@ -25,12 +25,21 @@ export function InvoiceStep({
   const typedDiscount = Number(discountInput);
   const requestedDiscount =
     discountInput.trim() === "" || !Number.isFinite(typedDiscount) ? 0 : Math.max(0, typedDiscount);
-  // El backend acepta cualquier descuento no negativo, así que uno mayor al
-  // subtotal daría un total negativo. Lo topamos acá y lo decimos.
-  const discount = Math.min(requestedDiscount, subtotal);
-  const discountExceedsSubtotal = requestedDiscount > subtotal;
 
-  const totals = calcSaleTotals({ subtotal, discount, requiresFactura });
+  // La etiqueta de descuento del cliente. El CRM la aplica igual al crear la
+  // venta —el descuento que vale es el que calcula el servidor—; acá se
+  // recalcula solo para que el vendedor cante el precio correcto ANTES de
+  // confirmar y no quede anotado otro. Ese era exactamente el problema que
+  // resolvió calcSaleTotals con el IVA, y una etiqueta del 20% lo traía de
+  // vuelta por otra puerta.
+  const tag = client.discountTag?.active ? client.discountTag : null;
+
+  const totals = calcSaleTotals({ subtotal, discount: requestedDiscount, requiresFactura, tag });
+  // El backend acepta cualquier descuento no negativo, así que uno que se pase
+  // del subtotal daría un total negativo. Lo topa calcSaleTotals; acá solo se
+  // avisa cuando lo tipeado no entró entero.
+  const discount = totals.manualDiscount;
+  const discountExceedsSubtotal = requestedDiscount > totals.manualDiscount;
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -116,8 +125,9 @@ export function InvoiceStep({
           />
           {discountExceedsSubtotal && (
             <p className="mt-2 text-sm text-amber-700">
-              El descuento no puede superar el subtotal. Se va a aplicar{" "}
-              {formatMoney(subtotal)}.
+              {tag
+                ? `Con el descuento de la etiqueta no queda tanto para descontar. Se va a aplicar ${formatMoney(totals.manualDiscount)}.`
+                : `El descuento no puede superar el subtotal. Se va a aplicar ${formatMoney(totals.manualDiscount)}.`}
             </p>
           )}
 
@@ -126,10 +136,16 @@ export function InvoiceStep({
               <dt>Subtotal</dt>
               <dd>{formatMoney(totals.subtotal)}</dd>
             </div>
-            {totals.discount > 0 && (
+            {tag && totals.tagDiscount > 0 && (
+              <div className="flex justify-between font-medium" style={{ color: "#e4622c" }}>
+                <dt>Etiqueta {describeTag(tag)}</dt>
+                <dd>−{formatMoney(totals.tagDiscount)}</dd>
+              </div>
+            )}
+            {totals.manualDiscount > 0 && (
               <div className="flex justify-between text-neutral-500">
-                <dt>Descuento</dt>
-                <dd>−{formatMoney(totals.discount)}</dd>
+                <dt>Descuento a mano</dt>
+                <dd>−{formatMoney(totals.manualDiscount)}</dd>
               </div>
             )}
             {requiresFactura && (

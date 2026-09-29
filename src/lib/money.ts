@@ -1,6 +1,5 @@
 /**
- * Espejo del cálculo de totales del CRM: `calcTax()` en
- * crm-polarizados/src/lib/utils.ts, `calcTagDiscount()` / `splitDiscount()` en
+ * Espejo del cálculo de totales del CRM: `calcTagDiscount()` / `splitDiscount()` en
  * crm-polarizados/src/lib/discount-tag-calc.ts, y el POST de
  * src/app/api/mobile/v1/sales/route.ts que los combina.
  *
@@ -11,13 +10,12 @@
  *
  * **Si el cálculo cambia del lado del CRM, tiene que cambiar acá.**
  *
- * Ojo con el orden de las operaciones: primero se resta el descuento y el IVA
- * se calcula sobre esa base neta — se factura lo que el taller paga, no el
- * precio de lista. Así lo hace el backend. Hasta que se corrigió lo cobraba
- * sobre el subtotal bruto, y el cliente pagaba IVA por plata que no pagó.
+ * El IVA ya no entra en la cuenta: el precio de lista YA lo incluye, así que
+ * sumárselo aparte a la venta que pedía factura lo cobraba dos veces. El total
+ * es el mismo lleve factura o no, y la factura se emite por ese mismo importe
+ * (el CRM le avisa a quien factura al confirmarse la venta). Antes se sumaba el
+ * 21% sobre la base neta de descuentos.
  */
-
-export const IVA_RATE = 0.21;
 
 /**
  * Cuánto descuenta la etiqueta del cliente sobre este subtotal.
@@ -39,11 +37,6 @@ export function calcTagDiscount(
 export function describeTag(tag: { code: string; name: string; type: string; value: number }): string {
   const detail = tag.type === "FIXED" ? formatMoney(tag.value) : `${tag.value}%`;
   return `${tag.code} — ${tag.name} (${detail})`;
-}
-
-/** El IVA va sobre la base imponible: el subtotal YA descontado, no el bruto. */
-export function calcTax(base: number): number {
-  return Math.round(base * IVA_RATE * 100) / 100;
 }
 
 export type SaleTotals = {
@@ -74,16 +67,16 @@ export function calcSaleTotals(input: {
     Math.max(input.subtotal - tagDiscount, 0)
   );
   const discount = Math.round((tagDiscount + manualDiscount) * 100) / 100;
-  const tax = input.requiresFactura
-    ? calcTax(Math.max(input.subtotal - discount, 0))
-    : 0;
+  // Sin IVA encima, igual que el backend: el precio ya lo incluye.
+  // `requiresFactura` se sigue mandando —es lo que dispara el recordatorio de
+  // facturación del CRM— pero no toca el total.
   return {
     subtotal: input.subtotal,
     discount,
     tagDiscount,
     manualDiscount,
-    tax,
-    total: input.subtotal - discount + tax,
+    tax: 0,
+    total: input.subtotal - discount,
   };
 }
 

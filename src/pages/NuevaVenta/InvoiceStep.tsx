@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ApiError, createSale } from "@/lib/api";
-import { IVA_RATE, calcSaleTotals, describeTag, formatMoney } from "@/lib/money";
+import { calcSaleTotals, describeTag, formatMoney } from "@/lib/money";
 import type { CartItem, Client, SaleDetail } from "@/lib/types";
 
 export function InvoiceStep({
@@ -150,8 +150,8 @@ export function InvoiceStep({
             )}
             {requiresFactura && (
               <div className="flex justify-between text-neutral-500">
-                <dt>IVA ({Math.round(IVA_RATE * 100)}%)</dt>
-                <dd>{formatMoney(totals.tax)}</dd>
+                <dt>Factura</dt>
+                <dd>Se emite por el total (IVA incluido)</dd>
               </div>
             )}
             <div className="flex justify-between border-t border-neutral-100 pt-1 text-base font-semibold text-neutral-900">

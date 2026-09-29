@@ -11,9 +11,10 @@
  *
  * **Si el cálculo cambia del lado del CRM, tiene que cambiar acá.**
  *
- * Ojo con el orden de las operaciones, que no es el intuitivo: el IVA se
- * calcula sobre el subtotal SIN descontar, y recién después se resta el
- * descuento. Así lo hace el backend.
+ * Ojo con el orden de las operaciones: primero se resta el descuento y el IVA
+ * se calcula sobre esa base neta — se factura lo que el taller paga, no el
+ * precio de lista. Así lo hace el backend. Hasta que se corrigió lo cobraba
+ * sobre el subtotal bruto, y el cliente pagaba IVA por plata que no pagó.
  */
 
 export const IVA_RATE = 0.21;
@@ -40,8 +41,9 @@ export function describeTag(tag: { code: string; name: string; type: string; val
   return `${tag.code} — ${tag.name} (${detail})`;
 }
 
-export function calcTax(subtotal: number): number {
-  return Math.round(subtotal * IVA_RATE * 100) / 100;
+/** El IVA va sobre la base imponible: el subtotal YA descontado, no el bruto. */
+export function calcTax(base: number): number {
+  return Math.round(base * IVA_RATE * 100) / 100;
 }
 
 export type SaleTotals = {
@@ -72,7 +74,9 @@ export function calcSaleTotals(input: {
     Math.max(input.subtotal - tagDiscount, 0)
   );
   const discount = Math.round((tagDiscount + manualDiscount) * 100) / 100;
-  const tax = input.requiresFactura ? calcTax(input.subtotal) : 0;
+  const tax = input.requiresFactura
+    ? calcTax(Math.max(input.subtotal - discount, 0))
+    : 0;
   return {
     subtotal: input.subtotal,
     discount,

@@ -111,16 +111,26 @@ export async function createLead(input: {
   return data.lead;
 }
 
-export async function searchProducts(search: string): Promise<Product[]> {
-  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+/**
+ * `contactId` es el cliente de la venta en curso, y **conviene mandarlo siempre
+ * que se lo tenga**: con él cada producto vuelve con la etiqueta de descuento que
+ * le corresponde a ese cliente (`product.discountTag`), que es lo que el carrito
+ * necesita para cantar el total correcto. Sin él, el catálogo viene a precio de
+ * lista y sin etiquetas.
+ */
+export async function searchProducts(search: string, contactId?: string): Promise<Product[]> {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (contactId) params.set("contactId", contactId);
+  const qs = params.toString() ? `?${params}` : "";
   const data = await request<{ products: Product[] }>(`/api/mobile/v1/products${qs}`);
   return data.products;
 }
 
-export async function findProductBySku(sku: string): Promise<Product | null> {
-  const data = await request<{ products: Product[] }>(
-    `/api/mobile/v1/products?sku=${encodeURIComponent(sku)}`
-  );
+export async function findProductBySku(sku: string, contactId?: string): Promise<Product | null> {
+  const params = new URLSearchParams({ sku });
+  if (contactId) params.set("contactId", contactId);
+  const data = await request<{ products: Product[] }>(`/api/mobile/v1/products?${params}`);
   return data.products[0] ?? null;
 }
 

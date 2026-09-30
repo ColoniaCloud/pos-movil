@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { ApiError, createSale } from "@/lib/api";
-import { calcSaleTotals, describeTag, formatMoney } from "@/lib/money";
+import { calcItemTagDiscount, calcSaleTotals, describeTag, formatMoney } from "@/lib/money";
 import type { CartItem, Client, SaleDetail } from "@/lib/types";
 
 export function InvoiceStep({
@@ -19,22 +19,30 @@ export function InvoiceStep({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const subtotal = cart.reduce((sum, c) => sum + c.product.price * c.quantity, 0);
   const contactName = client.company || `${client.firstName} ${client.lastName}`;
+
+  // Cada línea con la etiqueta que el CRM le asignó a ESE producto para ESTE
+  // cliente (llega en `product.discountTag`, ver searchProducts). El POS no
+  // decide cuál va: la precedencia vive en el CRM.
+  const lines = cart.map((c) => ({
+    item: c,
+    total: c.product.price * c.quantity,
+    tag: c.product.discountTag ?? null,
+  }));
 
   const typedDiscount = Number(discountInput);
   const requestedDiscount =
     discountInput.trim() === "" || !Number.isFinite(typedDiscount) ? 0 : Math.max(0, typedDiscount);
 
-  // La etiqueta de descuento del cliente. El CRM la aplica igual al crear la
-  // venta —el descuento que vale es el que calcula el servidor—; acá se
-  // recalcula solo para que el vendedor cante el precio correcto ANTES de
-  // confirmar y no quede anotado otro. Ese era exactamente el problema que
-  // resolvió calcSaleTotals con el IVA, y una etiqueta del 20% lo traía de
-  // vuelta por otra puerta.
-  const tag = client.discountTag?.active ? client.discountTag : null;
-
-  const totals = calcSaleTotals({ subtotal, discount: requestedDiscount, requiresFactura, tag });
+  // El CRM aplica el descuento igual al crear la venta —el que vale es el que
+  // calcula el servidor—; acá se recalcula solo para que el vendedor cante el
+  // precio correcto ANTES de confirmar y no quede anotado otro. Ese era
+  // exactamente el problema que resolvió calcSaleTotals con el IVA, y una
+  // etiqueta del 20% lo traía de vuelta por otra puerta.
+  const totals = calcSaleTotals({ lines, discount: requestedDiscount, requiresFactura });
+  // Solo para el cartel de "no queda tanto para descontar": si alguna línea
+  // llevó etiqueta, el tope del descuento a mano es más bajo y hay que decirlo.
+  const hayEtiquetas = totals.tagDiscount > 0;
   // El backend acepta cualquier descuento no negativo, así que uno que se pase
   // del subtotal daría un total negativo. Lo topa calcSaleTotals; acá solo se
   // avisa cuando lo tipeado no entró entero.
@@ -70,16 +78,33 @@ export function InvoiceStep({
         <div className="rounded-xl bg-white p-4 shadow-sm">
           <p className="mb-2 text-sm text-neutral-500">Productos</p>
           <ul className="divide-y divide-neutral-100">
-            {cart.map((item) => (
-              <li key={item.product.id} className="flex justify-between py-1.5 text-sm">
-                <span>
-                  {item.quantity}x {item.product.name}
-                </span>
-                <span className="font-medium">
-                  {formatMoney(item.product.price * item.quantity)}
-                </span>
-              </li>
-            ))}
+            {lines.map((line) => {
+              const descuento = calcItemTagDiscount(line);
+              return (
+                <li key={line.item.product.id} className="py-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span>
+                      {line.item.quantity}x {line.item.product.name}
+                    </span>
+                    <span className="font-medium">{formatMoney(line.total)}</span>
+                  </div>
+                  {/* El desglose por línea es el punto de todo el cambio: acá se
+                      ve que a una lámina se le descuenta y a otra no. Sin esto el
+                      vendedor ve un descuento global y no sabe de dónde salió. */}
+                  {descuento > 0 && line.tag ? (
+                    <div
+                      className="flex justify-between text-xs"
+                      style={{ color: "#e4622c" }}
+                    >
+                      <span>{describeTag(line.tag)}</span>
+                      <span>−{formatMoney(descuento)}</span>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-neutral-400">Sin descuento</p>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -116,7 +141,7 @@ export function InvoiceStep({
             type="number"
             inputMode="decimal"
             min="0"
-            max={subtotal}
+            max={totals.subtotal}
             step="0.01"
             value={discountInput}
             onChange={(e) => setDiscountInput(e.target.value)}
@@ -125,8 +150,8 @@ export function InvoiceStep({
           />
           {discountExceedsSubtotal && (
             <p className="mt-2 text-sm text-amber-700">
-              {tag
-                ? `Con el descuento de la etiqueta no queda tanto para descontar. Se va a aplicar ${formatMoney(totals.manualDiscount)}.`
+              {hayEtiquetas
+                ? `Con los descuentos por ítem no queda tanto para descontar. Se va a aplicar ${formatMoney(totals.manualDiscount)}.`
                 : `El descuento no puede superar el subtotal. Se va a aplicar ${formatMoney(totals.manualDiscount)}.`}
             </p>
           )}
@@ -136,9 +161,11 @@ export function InvoiceStep({
               <dt>Subtotal</dt>
               <dd>{formatMoney(totals.subtotal)}</dd>
             </div>
-            {tag && totals.tagDiscount > 0 && (
+            {totals.tagDiscount > 0 && (
               <div className="flex justify-between font-medium" style={{ color: "#e4622c" }}>
-                <dt>Etiqueta {describeTag(tag)}</dt>
+                {/* Sin nombrar una etiqueta: la venta puede tener varias, una por
+                    ítem. El detalle está arriba, línea por línea. */}
+                <dt>Descuentos por ítem</dt>
                 <dd>−{formatMoney(totals.tagDiscount)}</dd>
               </div>
             )}

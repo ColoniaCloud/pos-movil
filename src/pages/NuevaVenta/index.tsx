@@ -66,7 +66,12 @@ export function NuevaVenta() {
       )}
 
       {step === "productos" && (
-        <ProductStep cart={cart} onChangeQty={handleChangeQty} onContinue={() => setStep("facturacion")} />
+        <ProductStep
+          contactId={client!.id}
+          cart={cart}
+          onChangeQty={handleChangeQty}
+          onContinue={() => setStep("facturacion")}
+        />
       )}
 
       {step === "facturacion" && client && (

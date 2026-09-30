@@ -6,10 +6,17 @@ import { findProductBySku, searchProducts } from "@/lib/api";
 import type { CartItem, Product } from "@/lib/types";
 
 export function ProductStep({
+  contactId,
   cart,
   onChangeQty,
   onContinue,
 }: {
+  /**
+   * El cliente ya elegido en el paso anterior. Va en la búsqueda para que cada
+   * producto vuelva con la etiqueta de descuento pactada con él — sin eso, el
+   * paso de facturación no puede mostrar el desglose por ítem.
+   */
+  contactId: string;
   cart: CartItem[];
   onChangeQty: (product: Product, quantity: number) => void;
   onContinue: () => void;
@@ -25,8 +32,10 @@ export function ProductStep({
   }, [search]);
 
   const { data: products, isFetching } = useQuery({
-    queryKey: ["products-search", debounced],
-    queryFn: () => searchProducts(debounced),
+    // `contactId` en la key: el mismo producto tiene distinto descuento segun el
+    // cliente, asi que la cache no se puede compartir entre ventas.
+    queryKey: ["products-search", contactId, debounced],
+    queryFn: () => searchProducts(debounced, contactId),
   });
 
   const qtyInCart = (productId: string) => cart.find((c) => c.product.id === productId)?.quantity ?? 0;
@@ -37,7 +46,7 @@ export function ProductStep({
     setScanning(false);
     setScanError(null);
     try {
-      const product = await findProductBySku(sku);
+      const product = await findProductBySku(sku, contactId);
       if (!product) {
         setScanError(`No se encontró ningún producto con SKU "${sku}"`);
         return;

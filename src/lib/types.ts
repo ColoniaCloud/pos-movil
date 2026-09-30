@@ -53,6 +53,16 @@ export type Product = {
   stock: number;
   imageUrl: string | null;
   category: string;
+  /**
+   * La etiqueta de descuento que le corresponde a ESTE producto para el cliente
+   * de la venta en curso, ya resuelta por el CRM. `null` = este producto no lleva
+   * descuento para este cliente; `undefined` = se pidió el catálogo sin cliente.
+   *
+   * El POS no la deduce: la precedencia (acuerdo por producto → etiqueta general,
+   * con la regla de que tener acuerdos apaga la general) vive en el CRM. Ver
+   * conEtiquetas() en su api/mobile/v1/products/route.ts.
+   */
+  discountTag?: DiscountTag | null;
 };
 
 export type CartItem = {

@@ -1,16 +1,19 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
-import { Wallet, StickyNote, Undo2, AlertCircle } from "lucide-react";
+import { Wallet, StickyNote, Undo2, AlertCircle, FileSignature, CheckCircle2 } from "lucide-react";
 import { Screen } from "@/components/Screen";
 import { PaymentForm } from "@/components/PaymentForm";
+import { RemitoFirma } from "@/components/RemitoFirma";
+import { RemitoLink } from "@/components/RemitoLink";
 import { ApiError, addSaleNote, getSale } from "@/lib/api";
+import type { SaleDetail } from "@/lib/types";
 
 export function VentaDetalle() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [panel, setPanel] = useState<"none" | "pago" | "nota">("none");
+  const [panel, setPanel] = useState<"none" | "pago" | "nota" | "firma">("none");
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState<string | null>(null);
 
@@ -131,6 +134,22 @@ export function VentaDetalle() {
           </div>
         </div>
 
+        {sale.remito && <RemitoCard sale={sale} onSign={() => setPanel(panel === "firma" ? "none" : "firma")} />}
+
+        {panel === "firma" && sale.remito && (
+          <div className="rounded-xl bg-white shadow-sm">
+            <RemitoFirma
+              saleId={sale.id}
+              remitoNumber={sale.remito.number}
+              contactEmail={sale.contact.email || null}
+              onSigned={() => {
+                setPanel("none");
+                queryClient.invalidateQueries({ queryKey: ["sale", id] });
+              }}
+            />
+          </div>
+        )}
+
         {sale.notes && (
           <div className="rounded-xl bg-white p-4 shadow-sm">
             <h2 className="mb-1 font-semibold text-neutral-900">Notas</h2>
@@ -203,5 +222,47 @@ export function VentaDetalle() {
         )}
       </div>
     </Screen>
+  );
+}
+
+const VIA: Record<string, string> = {
+  ONLINE: "online",
+  POS: "en el punto de venta",
+  PAPER: "en papel",
+};
+
+/** El remito: firmado, o los dos caminos para firmarlo (ahora o con el link). */
+function RemitoCard({ sale, onSign }: { sale: SaleDetail; onSign: () => void }) {
+  const remito = sale.remito!;
+  if (remito.signedAt) {
+    return (
+      <div className="flex items-start gap-3 rounded-xl bg-white p-4 shadow-sm">
+        <CheckCircle2 className="h-5 w-5 shrink-0 text-green-600" strokeWidth={1.5} />
+        <div className="text-sm">
+          <p className="font-semibold text-neutral-900">Remito N° {remito.number} firmado</p>
+          <p className="text-neutral-500">
+            {VIA[remito.signedVia ?? "PAPER"] ?? ""} · {new Date(remito.signedAt).toLocaleString("es-AR")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (sale.status === "CANCELLED") return null;
+  return (
+    <div className="space-y-3 rounded-xl bg-white p-4 shadow-sm">
+      <div>
+        <p className="font-semibold text-neutral-900">Remito N° {remito.number} sin firmar</p>
+        <p className="text-sm text-neutral-500">Al firmarlo, la venta queda entregada.</p>
+      </div>
+      <button
+        onClick={onSign}
+        className="flex w-full items-center justify-center gap-2 rounded-xl py-3 font-semibold text-white active:opacity-90"
+        style={{ background: "#e4622c" }}
+      >
+        <FileSignature className="h-5 w-5" strokeWidth={1.5} />
+        Firmar ahora
+      </button>
+      <RemitoLink saleId={sale.id} />
+    </div>
   );
 }

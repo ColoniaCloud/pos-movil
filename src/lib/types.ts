@@ -102,6 +102,12 @@ export type SaleDetail = {
   totalPaid: number;
   remaining: number;
   createdAt: string;
+  /**
+   * El remito y si ya se firmó. Firmar es entregar: una venta con el remito
+   * firmado está entregada. `signedVia`: ONLINE (el cliente desde su link), POS
+   * (en el teléfono del vendedor o el mostrador), PAPER (registrado a mano).
+   */
+  remito: { number: number; signedAt: string | null; signedVia: string | null } | null;
   items: {
     id: string;
     productName: string;

@@ -214,6 +214,32 @@ export async function sendRemitoEmail(saleId: string, email?: string): Promise<{
   });
 }
 
+/**
+ * El cliente firma el remito en el teléfono del vendedor. Firmar es entregar:
+ * la venta pasa a entregada en el CRM. La copia firmada va al email del
+ * cliente, o al que se escriba si no tenía uno (`saveEmail` lo guarda en la
+ * ficha).
+ *
+ * Sin señal, `fetch` tira un TypeError y no un ApiError: quien llama lo usa
+ * para distinguir "no se guardó por la conexión" de "el CRM lo rechazó".
+ */
+export async function signRemito(
+  saleId: string,
+  input: { signature: string; name: string; dni?: string; email?: string; saveEmail?: boolean }
+): Promise<{ sentTo: string | null; emailSaved: boolean }> {
+  return request(`/api/mobile/v1/remitos/${saleId}/sign`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+/** El link para que el cliente firme desde su celular, con el WhatsApp ya armado. */
+export async function getRemitoLink(
+  saleId: string
+): Promise<{ url: string; whatsappUrl: string | null; message: string; signed: boolean }> {
+  return request(`/api/mobile/v1/remitos/${saleId}/link`, { method: "POST" });
+}
+
 export async function listLeads(params: {
   search?: string;
   contacted?: boolean;

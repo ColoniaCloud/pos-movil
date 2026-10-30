@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Camera, ArrowRight, Minus, Plus, Package } from "lucide-react";
 import { QrScanner } from "@/components/QrScanner";
 import { findProductBySku, searchProducts } from "@/lib/api";
+import { ScanQuantityDialog } from "./ScanQuantityDialog";
 import type { CartItem, Product } from "@/lib/types";
 
 export function ProductStep({
@@ -25,6 +26,10 @@ export function ProductStep({
   const [debounced, setDebounced] = useState("");
   const [scanning, setScanning] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  // El producto recién escaneado, con lo que ya había en la venta en ese
+  // momento: el diálogo calcula el disponible contra ese número, no contra el
+  // carrito que él mismo va a modificar.
+  const [scanned, setScanned] = useState<{ product: Product; inCart: number } | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
@@ -51,7 +56,7 @@ export function ProductStep({
         setScanError(`No se encontró ningún producto con SKU "${sku}"`);
         return;
       }
-      onChangeQty(product, qtyInCart(product.id) + 1);
+      setScanned({ product, inCart: qtyInCart(product.id) });
     } catch {
       setScanError("No se pudo buscar el producto escaneado");
     }
@@ -145,6 +150,23 @@ export function ProductStep({
           </span>
         </button>
       </div>
+
+      {scanned && (
+        <ScanQuantityDialog
+          product={scanned.product}
+          inCart={scanned.inCart}
+          onAdd={(quantity) => onChangeQty(scanned.product, scanned.inCart + quantity)}
+          onScanAnother={() => {
+            setScanned(null);
+            setScanning(true);
+          }}
+          onContinue={() => {
+            setScanned(null);
+            onContinue();
+          }}
+          onClose={() => setScanned(null)}
+        />
+      )}
 
       {scanning && <QrScanner onScan={handleScan} onClose={() => setScanning(false)} />}
     </div>

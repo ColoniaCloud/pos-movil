@@ -37,6 +37,7 @@ export function NuevaVenta() {
   const [createdSale, setCreatedSale] = useState<SaleDetail | null>(null);
   const [signedInfo, setSignedInfo] = useState<{ sentTo: string | null; emailSaved: boolean } | null>(null);
   const [laterOpen, setLaterOpen] = useState(false);
+  const [confirmChange, setConfirmChange] = useState(false);
 
   // Se guarda mientras la venta se arma y se borra apenas el CRM la confirma:
   // pasado ese punto la venta ya vive en el CRM y el borrador sólo estorbaría.
@@ -57,8 +58,24 @@ export function NuevaVenta() {
     });
   }
 
+  // Cambiar de cliente (la X del chip o la flecha de atrás). Los precios y
+  // descuentos del carrito son los del cliente que se saca, así que con
+  // productos cargados se pide confirmar y el carrito se vacía; sin productos
+  // se vuelve directo. En los dos casos el cliente se borra del borrador.
+  function requestChangeClient() {
+    if (cart.length > 0) setConfirmChange(true);
+    else resetClient();
+  }
+
+  function resetClient() {
+    setConfirmChange(false);
+    setCart([]);
+    setClient(null);
+    setStep("cliente");
+  }
+
   function backStep() {
-    if (step === "productos") setStep("cliente");
+    if (step === "productos") requestChangeClient();
     else if (step === "facturacion") setStep("productos");
     else if (step === "firma") setStep("listo");
     else navigate(-1);
@@ -77,11 +94,44 @@ export function NuevaVenta() {
 
       {step === "productos" && (
         <ProductStep
-          contactId={client!.id}
+          client={client!}
           cart={cart}
           onChangeQty={handleChangeQty}
           onContinue={() => setStep("facturacion")}
+          onChangeClient={requestChangeClient}
         />
+      )}
+
+      {confirmChange && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/50" onClick={() => setConfirmChange(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full space-y-4 rounded-t-2xl bg-white p-4 pb-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <p className="text-lg font-semibold text-neutral-900">¿Cambiar de cliente?</p>
+              <p className="mt-1 text-sm text-neutral-600">
+                Los precios y descuentos de la venta son los de {client?.company || `${client?.firstName} ${client?.lastName}`}.
+                Si cambiás de cliente, se vacía el carrito ({cart.length} producto{cart.length === 1 ? "" : "s"}).
+              </p>
+            </div>
+            <button
+              onClick={resetClient}
+              className="w-full rounded-xl py-3 font-semibold text-white"
+              style={{ background: "#e4622c" }}
+            >
+              Vaciar y elegir otro cliente
+            </button>
+            <button
+              onClick={() => setConfirmChange(false)}
+              className="w-full rounded-xl border border-neutral-300 py-3 font-semibold text-neutral-700 active:bg-neutral-100"
+            >
+              Seguir con este cliente
+            </button>
+          </div>
+        </div>
       )}
 
       {step === "facturacion" && client && (

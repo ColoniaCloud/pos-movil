@@ -1,27 +1,32 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, ArrowRight, Minus, Plus, Package } from "lucide-react";
+import { Camera, ArrowRight, Minus, Plus, Package, X } from "lucide-react";
 import { QrScanner } from "@/components/QrScanner";
 import { findProductBySku, searchProducts } from "@/lib/api";
 import { ScanQuantityDialog } from "./ScanQuantityDialog";
-import type { CartItem, Product } from "@/lib/types";
+import type { CartItem, Client, Product } from "@/lib/types";
 
 export function ProductStep({
-  contactId,
+  client,
   cart,
   onChangeQty,
   onContinue,
+  onChangeClient,
 }: {
   /**
-   * El cliente ya elegido en el paso anterior. Va en la búsqueda para que cada
-   * producto vuelva con la etiqueta de descuento pactada con él — sin eso, el
-   * paso de facturación no puede mostrar el desglose por ítem.
+   * El cliente ya elegido en el paso anterior. Su id va en la búsqueda para que
+   * cada producto vuelva con la etiqueta de descuento pactada con él — sin eso,
+   * el paso de facturación no puede mostrar el desglose por ítem.
    */
-  contactId: string;
+  client: Client;
   cart: CartItem[];
   onChangeQty: (product: Product, quantity: number) => void;
   onContinue: () => void;
+  /** La X del chip: el padre decide si hay que avisar (carrito con productos) y vuelve a elegir cliente. */
+  onChangeClient: () => void;
 }) {
+  const contactId = client.id;
+  const clientName = client.company || `${client.firstName} ${client.lastName}`.trim();
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -65,6 +70,18 @@ export function ProductStep({
   return (
     <div className="flex flex-1 flex-col">
       <div className="space-y-2 p-4 pb-2">
+        <div className="flex">
+          <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-orange-200 bg-orange-50 py-1 pl-3.5 pr-1">
+            <span className="truncate text-sm font-semibold text-neutral-900">{clientName}</span>
+            <button
+              onClick={onChangeClient}
+              aria-label={`Quitar a ${clientName} y elegir otro cliente`}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-neutral-600 active:bg-orange-100"
+            >
+              <X className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+          </span>
+        </div>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
